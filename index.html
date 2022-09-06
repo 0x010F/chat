@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ .title }}</title>
+</head>
+
+<body>
+  <div>
+    <div id="rooms"></div>
+    <div class="messages">
+
+    </div>
+    <form>
+      <input id="message" type="text">
+      <input type="submit" value="Submit">
+    </form>
+  </div>
+  <script>
+
+    var roomsList = [
+      "general",
+      "projects",
+      "ideas",
+      "development"
+    ]
+
+    var url = new URL(window.location.href)
+    var wsURL = "ws://" + url.host + "/ws" + url.pathname
+    var ws = new WebSocket(wsURL)
+
+    var room = url.pathname.replace("/", "")
+
+    var form = document.querySelector("form")
+    var rooms = document.querySelector("#rooms")
+
+    roomsList.forEach(room => {
+      var div = document.createElement("div")
+      var a = document.createElement("a")
+      a.setAttribute("href", "/" + room)
+      a.textContent = "#" + room
+      div.appendChild(a)
+      rooms.appendChild(div)
+    })
+
+    function open() {
+      console.log("Connected")
+    }
+
+    function message(payload) {
+      var data = JSON.parse(payload.data)
+      switch (data.type) {
+        case "message":
+          add(data.payload)
+      }
+    }
+
+    function submit(e) {
+      e.preventDefault()
+
+      const message = document.querySelector("#message").value
+      var m = {
+        type: "message",
+        payload: {
+          body: message,
+          room: room
+        }
+      }
+
+      ws.send(JSON.stringify(m))
+    }
+
+    function add(message) {
+      console.log(message)
+      var messages = document.querySelector(".messages")
+      var ele = document.createElement("div")
+      ele.textContent = message.body
+      messages.appendChild(ele)
+    }
+
+    function close(data) {
+      console.log(data)
+    }
+
+    form.addEventListener("submit", submit)
+
+    ws.addEventListener("open", open)
+    ws.addEventListener("message", message)
+    ws.addEventListener("close", close)
+  </script>
+</body>
+
+</html>
